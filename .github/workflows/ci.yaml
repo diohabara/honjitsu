@@ -3,29 +3,36 @@ on: [push]
 name: CI
 
 jobs:
-  build_and_test:
+  build_and_format:
     name: build/test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           components: rustfmt
           override: true
-      - uses: actions-rs/cargo@v1
+      - name: Build
+        uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --all-features
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --verbose
-      - uses: mbrobbel/rustfmt-check@0.3.0
+      - name: Format
+        uses: mbrobbel/rustfmt-check@0.3.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - run: rustup component add clippy
-      - uses: actions-rs/clippy-check@v1
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup
+        run: rustup component add clippy
+      - name: Clippy
+        uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
