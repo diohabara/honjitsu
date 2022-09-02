@@ -1,16 +1,16 @@
+extern crate dotenv;
 extern crate serde_json;
 extern crate tokio;
-extern crate dotenv;
-use std::collections::HashMap;
-use std::env;
-use dotenv::dotenv;
 use chrono::prelude::*;
 use chrono::Duration;
+use dotenv::dotenv;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Method;
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::HashMap;
+use std::env;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct TimeEntry {
