@@ -1,96 +1,11 @@
-extern crate dotenv;
-extern crate serde_json;
 extern crate tokio;
-use chrono::prelude::*;
-use chrono::Duration;
-use dotenv::dotenv;
-use reqwest::header::CONTENT_TYPE;
-use reqwest::Client;
-use reqwest::Method;
-use serde::Deserialize;
-use serde::Serialize;
-use std::collections::HashMap;
-use std::env;
-
-#[derive(Debug, Deserialize, Serialize)]
-struct TimeEntry {
-    at: String,
-    billable: bool,
-    description: String,
-    duration: i64,
-    duronly: bool,
-    id: Option<usize>,
-    pid: Option<usize>,
-    project_id: Option<usize>,
-    server_deleted_at: Option<String>,
-    start: String,
-    stop: Option<String>,
-    tag_ids: Option<Vec<usize>>,
-    tags: Option<Vec<String>>,
-    task_id: Option<usize>,
-    tid: Option<usize>,
-    uid: Option<usize>,
-    user_id: Option<usize>,
-    wid: Option<usize>,
-    workspace_id: Option<usize>,
-}
+mod toggl;
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let url = "https://api.track.toggl.com/api/v9/me/time_entries";
-    dotenv().ok();
-    let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
-    let password = env::var("TOGGL_PASSWORD").expect("TOGGL_PASSWORD must be set");
-    let client = Client::new();
-    let req = client
-        .request(Method::GET, url.to_string())
-        .basic_auth(email, Some(password))
-        .header(CONTENT_TYPE, "application/json")
-        .send()
-        .await?;
-    let res_text = req.text().await?;
-    let json: Vec<TimeEntry> = serde_json::from_str(res_text.as_str()).unwrap();
-
-    let today = Utc::today();
-    let mut description_to_minutes: HashMap<String, Duration> = HashMap::new();
-    for obj in json {
-        let start_time = DateTime::parse_from_rfc3339(&obj.start)
-            .unwrap()
-            .with_timezone(&Utc);
-        if start_time.date() < today {
-            continue;
-        }
-        match obj.stop {
-            None => continue,
-            Some(stop) => {
-                let stop_time = DateTime::parse_from_rfc3339(&stop)
-                    .unwrap()
-                    .with_timezone(&Utc);
-                let duration = stop_time - start_time;
-                let description = obj.description;
-                if !description_to_minutes.contains_key(&description.to_string()) {
-                    description_to_minutes.insert(description.to_string(), duration);
-                } else {
-                    let old_duration = description_to_minutes
-                        .get(&description.to_string())
-                        .unwrap();
-                    description_to_minutes
-                        .insert(description.to_string(), duration + *old_duration);
-                }
-                println!(
-                    "{}: {}h {}m",
-                    description,
-                    description_to_minutes
-                        .get(&description.to_string())
-                        .unwrap()
-                        .num_hours(),
-                    description_to_minutes
-                        .get(&description.to_string())
-                        .unwrap()
-                        .num_minutes()
-                );
-            }
-        }
+    let pair_of_description = toggl::get_today_toggl_time_entries().await?;
+    for (k, v) in pair_of_description.iter() {
+        println!("{}: {}h {}m", k, v.num_hours(), v.num_minutes());
     }
     Ok(())
 }
