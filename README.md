@@ -12,3 +12,4 @@ cargo clippy --fix
 ## references
 
 - [Toggl Track](https://developers.track.toggl.com/docs/)
+- [todoist API](https://developer.todoist.com/sync/v9/)

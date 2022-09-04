@@ -1,4 +1,4 @@
-pub mod toggl;
-pub mod todoist;
-pub mod scrapbox;
 pub mod github;
+pub mod scrapbox;
+pub mod todoist;
+pub mod toggl;
