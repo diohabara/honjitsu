@@ -2,8 +2,8 @@ extern crate dotenv;
 extern crate serde_json;
 extern crate tokio;
 
-use chrono::Duration;
 use chrono::prelude::*;
+use chrono::Duration;
 use dotenv::dotenv;
 use reqwest::Client;
 use reqwest::Method;
