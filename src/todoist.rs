@@ -2,11 +2,9 @@ extern crate dotenv;
 extern crate serde_json;
 extern crate tokio;
 
-use chrono::prelude::*;
-#[warn(unused_imports)]
 use chrono::Duration;
+use chrono::prelude::*;
 use dotenv::dotenv;
-use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Method;
 use std::collections::HashMap;
@@ -16,24 +14,46 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Task {
-    id: usize,
+struct CompletedTask {
+    completed_at: String,
     content: String,
-    completed: bool,
-    label_ids: Vec<usize>,
-    order: usize,
-    priority: usize,
-    project_id: usize,
-    section_id: usize,
-    url: String,
-    comment_count: usize,
+    id: String,
+    meta_data: Option<String>,
+    project_id: String,
+    task_id: String,
+    user_id: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Projects {
+    child_order: usize,
+    collapsed: bool,
+    color: String,
+    id: String,
+    inbox_project: bool,
+    is_archived: bool,
+    is_deleted: bool,
+    is_favorite: bool,
+    name: String,
+    parent_id: Option<String>,
+    shared: bool,
+    sync_id: Option<String>,
+    view_style: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Value {
+    items: Vec<CompletedTask>,
+    projects: HashMap<String, Projects>,
 }
 
 // ref: https://developer.todoist.com/sync/v9/#get-all-completed-items
 // get all completed tasks
 // curl https://api.todoist.com/sync/v9/completed/get_all -H "Authorization: Bearer $token"
-pub async fn get_today_todoist_completed_tasks() -> Result<Vec<String>, reqwest::Error> {
+pub async fn get_today_todoist_completed_tasks() -> Result<(), reqwest::Error> {
+    let params = [("since", "2022-9-05T00:00:00")];
     let url = "https://api.todoist.com/sync/v9/completed/get_all";
+    let url = reqwest::Url::parse_with_params(url, &params).unwrap();
     dotenv().ok();
     let token = env::var("TODOIST_TOKEN").expect("TODOIST_TOKEN must be set");
     let client = Client::new();
@@ -42,5 +62,18 @@ pub async fn get_today_todoist_completed_tasks() -> Result<Vec<String>, reqwest:
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
-    unimplemented!("todoist");
+    let res_text = req.text().await?;
+    let json: Value = serde_json::from_str(res_text.as_str()).unwrap();
+    let yesterday = Utc::today() - Duration::days(1);
+    let Value { items, projects: _ } = json;
+    let tasks = items;
+    for obj in tasks {
+        let completed_at = DateTime::parse_from_rfc3339(&obj.completed_at)
+            .unwrap()
+            .with_timezone(&Utc);
+        if completed_at.date() == yesterday {
+            println!("{:?}", obj);
+        }
+    }
+    Ok(())
 }
