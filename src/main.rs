@@ -1,5 +1,6 @@
 use honjitsu::{
-    scrapbox::get_scrapbox_yesterday_entry, todoist::get_today_todoist_completed_tasks,
+    scrapbox::get_scrapbox_yesterday_entry, todoist::get_yesterday_todoist_completed_tasks,
+    toggl::get_yesterday_toggl_time_entries,
 };
 
 extern crate tokio;
@@ -7,11 +8,14 @@ mod toggl;
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let pair_of_description = toggl::get_today_toggl_time_entries().await?;
+    let pair_of_description = get_yesterday_toggl_time_entries().await?;
     for (k, v) in pair_of_description.iter() {
         println!("{}: {}h {}m", k, v.num_hours(), v.num_minutes());
     }
-    get_today_todoist_completed_tasks().await?;
+    let completed_tasks = get_yesterday_todoist_completed_tasks().await?;
+    for k in completed_tasks.iter() {
+        println!("{}", k);
+    }
     let scrapbox_text = get_scrapbox_yesterday_entry().await?;
     println!("{}", scrapbox_text);
     Ok(())

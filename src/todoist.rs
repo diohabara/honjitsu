@@ -46,7 +46,7 @@ struct Value {
 // ref: https://developer.todoist.com/sync/v9/#get-all-completed-items
 // get all completed tasks
 // curl https://api.todoist.com/sync/v9/completed/get_all -H "Authorization: Bearer $token"
-pub async fn get_today_todoist_completed_tasks() -> Result<(), reqwest::Error> {
+pub async fn get_yesterday_todoist_completed_tasks() -> Result<Vec<String>, reqwest::Error> {
     let params = [("since", "2022-9-05T00:00:00")];
     let url = "https://api.todoist.com/sync/v9/completed/get_all";
     let url = reqwest::Url::parse_with_params(url, &params).unwrap();
@@ -63,13 +63,14 @@ pub async fn get_today_todoist_completed_tasks() -> Result<(), reqwest::Error> {
     let yesterday = Utc::today() - Duration::days(1);
     let Value { items, projects: _ } = json;
     let tasks = items;
+    let mut completed_tasks = Vec::new();
     for obj in tasks {
         let completed_at = DateTime::parse_from_rfc3339(&obj.completed_at)
             .unwrap()
             .with_timezone(&Utc);
         if completed_at.date() == yesterday {
-            println!("{:?}", obj);
+            completed_tasks.push(obj.content);
         }
     }
-    Ok(())
+    Ok(completed_tasks)
 }

@@ -33,7 +33,7 @@ struct TimeEntry {
     workspace_id: Option<usize>,
 }
 
-pub async fn get_today_toggl_time_entries() -> Result<Vec<(String, Duration)>, reqwest::Error> {
+pub async fn get_yesterday_toggl_time_entries() -> Result<Vec<(String, Duration)>, reqwest::Error> {
     let url = "https://api.track.toggl.com/api/v9/me/time_entries";
     dotenv().ok();
     let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
