@@ -1,7 +1,3 @@
-extern crate dotenv;
-extern crate serde_json;
-extern crate tokio;
-
 use chrono::prelude::*;
 use chrono::Duration;
 use dotenv::dotenv;
