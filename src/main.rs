@@ -1,4 +1,6 @@
-use honjitsu::{todoist::get_today_todoist_completed_tasks, scrapbox::get_scrapbox_yesterday_entry};
+use honjitsu::{
+    scrapbox::get_scrapbox_yesterday_entry, todoist::get_today_todoist_completed_tasks,
+};
 
 extern crate tokio;
 mod toggl;
