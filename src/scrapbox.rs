@@ -32,23 +32,23 @@ fn convert_scrapbox_date_to_url_date(date: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use chrono::Utc;
 
     use crate::scrapbox::convert_scrapbox_date_to_url_date;
 
-  #[test]
-  fn test_convert_scrapbox_date_to_url_date() {
-      let date_leading_zero = "2020-1-1";
-      let url_date_leading_zero = convert_scrapbox_date_to_url_date(date_leading_zero);
-      assert_eq!(url_date_leading_zero, "2020%2F1%2F1");
+    #[test]
+    fn test_convert_scrapbox_date_to_url_date() {
+        let date_leading_zero = "2020-1-1";
+        let url_date_leading_zero = convert_scrapbox_date_to_url_date(date_leading_zero);
+        assert_eq!(url_date_leading_zero, "2020%2F1%2F1");
 
-      let date_non_leading_zero = "2020-11-11";
-      let url_date_non_leading_zero = convert_scrapbox_date_to_url_date(date_non_leading_zero);
-      assert_eq!(url_date_non_leading_zero, "2020%2F11%2F11");
+        let date_non_leading_zero = "2020-11-11";
+        let url_date_non_leading_zero = convert_scrapbox_date_to_url_date(date_non_leading_zero);
+        assert_eq!(url_date_non_leading_zero, "2020%2F11%2F11");
 
-      let today = Utc::today().format("%Y-%-m-%-d").to_string();
-      let url_today = convert_scrapbox_date_to_url_date(&today);
-      assert_eq!(url_today, today.replace('-', "%2F"));
-  }
+        let today = Utc::today().format("%Y-%-m-%-d").to_string();
+        let url_today = convert_scrapbox_date_to_url_date(&today);
+        assert_eq!(url_today, today.replace('-', "%2F"));
+    }
 }
