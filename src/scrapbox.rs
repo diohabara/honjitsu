@@ -13,7 +13,8 @@ pub async fn get_scrapbox_yesterday_entry() -> Result<String, reqwest::Error> {
     let client = Client::new();
     let req = client.request(Method::GET, url.to_string()).send().await?;
     let res_text = req.text().await?;
-    Ok(res_text)
+    let markdown = convert_scrapbox_text_into_markdown(res_text.as_str());
+    Ok(markdown)
 }
 
 fn convert_scrapbox_date_to_url_date(date: &str) -> String {
@@ -115,13 +116,12 @@ fn convert_scrapbox_text_into_markdown(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::{assert_eq};
 
     use crate::scrapbox::convert_scrapbox_asterisk_into_header;
     use crate::scrapbox::convert_scrapbox_date_to_url_date;
     use crate::scrapbox::convert_scrapbox_icon_into_image;
     use crate::scrapbox::convert_scrapbox_link_into_url;
-    use crate::scrapbox::convert_scrapbox_text_into_markdown;
 
     #[test]
     fn test_convert_scrapbox_date_into_url_date() {
