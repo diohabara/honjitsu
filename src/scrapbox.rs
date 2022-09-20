@@ -116,7 +116,7 @@ fn convert_scrapbox_text_into_markdown(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
-    use pretty_assertions::{assert_eq};
+    use pretty_assertions::assert_eq;
 
     use crate::scrapbox::convert_scrapbox_asterisk_into_header;
     use crate::scrapbox::convert_scrapbox_date_to_url_date;
