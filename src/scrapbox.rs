@@ -57,7 +57,7 @@ fn convert_scrapbox_asterisk_into_header(text: &str) -> String {
       \[
       (?P<asterisk>\*+) # asterisk
       \s
-      (?P<text>.*) # text
+      (?P<text>.*?) # text
       \]",
     )
     .unwrap();
@@ -69,21 +69,53 @@ fn convert_scrapbox_asterisk_into_header(text: &str) -> String {
     header
 }
 
+fn get_the_number_of_leading_space(text: &str) -> i32 {
+    let re = Regex::new(r"^(?P<space>\s*)").unwrap();
+    let matched_part = re.captures(text).unwrap();
+    matched_part[1].len() as i32
+}
+
 fn convert_scrapbox_text_into_markdown(text: &str) -> String {
-    let re = Regex::new(
-        r"(?x)
-      (?P<url>https?://[^\s]+) # url
-      (?P<text>\[+\]) # text
-    ",
-    )
-    .unwrap();
-    let text = re.replace(text, "$text($url)").to_string();
-    text
+    let mut markdown: Vec<String> = Vec::new();
+    for line in text.lines() {
+        let header_re = Regex::new(r"\[\*+\s.*?\]").unwrap();
+        let icon_re = Regex::new(r"\[[[:alnum:]]*?\.icon\]").unwrap();
+        let link_re = Regex::new(r"\[[[:alnum:]]*?\]").unwrap();
+        let indent_size = get_the_number_of_leading_space(line);
+        let mut line_text: Vec<String> = Vec::new();
+        if 0 < indent_size {
+            let line_indent = (0..((indent_size / 8 - 1) * 2))
+                .map(|_| " ")
+                .collect::<String>();
+            line_text.push([line_indent, "- ".to_string()].concat());
+        }
+        if header_re.is_match(line) {
+            let header =
+                header_re.replace(line.trim(), convert_scrapbox_asterisk_into_header(line));
+            line_text.push(header.to_string());
+            markdown.push(line_text.join(""));
+        } else if icon_re.is_match(line) {
+            let icon = icon_re.replace(line.trim(), convert_scrapbox_icon_into_image(line));
+            line_text.push(icon.to_string());
+            markdown.push(line_text.join(""));
+        } else if link_re.is_match(line) {
+            let link = link_re.replace(line.trim(), convert_scrapbox_link_into_url(line));
+            line_text.push(link.to_string());
+            markdown.push(line_text.join(""));
+        } else if line.trim().is_empty() {
+            continue;
+        } else {
+            line_text.push(line.trim().to_string());
+            markdown.push(line_text.join(""));
+        }
+    }
+    markdown.join("\n")
 }
 
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use pretty_assertions::{assert_eq, assert_ne};
 
     use crate::scrapbox::convert_scrapbox_asterisk_into_header;
     use crate::scrapbox::convert_scrapbox_date_to_url_date;
@@ -134,23 +166,17 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_convert_scrapbox_text_into_markdown() {
         let given = r#"
-        2022/9/15
+2022/9/15
 #report
 [*** TODO]
- [v] LeetCode 5
- [v] Recap [CS 5333 Discrete Structures]
- [v] [Citadel] OA
- [v] [Valkyrie Trading] OA
+        [v] LeetCode 5
+        [v] [Citadel] OA
 [*** Logs]
         LeetCode
                 [fail.icon] https://leetcode.com/problems/kth-largest-element-in-an-array/
-                [fail.icon] https://leetcode.com/problems/task-scheduler/
-                [fail.icon] https://leetcode.com/problems/design-twitter/
-                [pass.icon] https://leetcode.com/problems/subsets/
-                [fail.icon] https://leetcode.com/problems/combination-sum/
+                [pass.icon] https://leetcode.com/problems/task-scheduler/
         Recap [CS 5333 Discrete Structures]
         [Citadel] OA
                 [jio.icon] done
@@ -161,28 +187,26 @@ mod tests {
                 [2022/9/12]
                 [2022/9/14]
                 [jio.icon] I know all about discrete math
-        Improve [honjitsu]
-        "#;
-        let expected = r#"
-        2022/9/15
+"#;
+        let expected = r#"2022/9/15
 #report
 ## TODO
- [v] LeetCode 5
- [v] Recap [CS 5333 Discrete Structures]
- [v] [Citadel] OA
- [v] [Valkyrie Trading] OA
+- [v](https://scrapbox.io/jampon/v) LeetCode 5
+- [v](https://scrapbox.io/jampon/v) [Citadel] OA
 ## Logs
-        LeetCode
-                ![fail](https://scrapbox.io/api/pages/jampon/fail/icon) https://leetcode.com/problems/kth-largest-element-in-an-array/
-        Recap [CS 5333 Discrete Structures]
-        [Valkyrie Trading] OA
-                [jio.icon] 2/2 solved
-        Recap [CS 5333 Discrete Structures]
-                [2022/9/12]
-                [2022/9/14]
-                [jio.icon] I know all about discrete math
-        Improve [honjitsu]
-        "#;
+- LeetCode
+  - ![fail](https://scrapbox.io/api/pages/jampon/fail/icon) https://leetcode.com/problems/kth-largest-element-in-an-array/
+  - ![pass](https://scrapbox.io/api/pages/jampon/pass/icon) https://leetcode.com/problems/task-scheduler/
+- Recap [CS 5333 Discrete Structures]
+- [Citadel](https://scrapbox.io/jampon/Citadel) OA
+  - ![jio](https://scrapbox.io/api/pages/jampon/jio/icon) done
+  - ![jio](https://scrapbox.io/api/pages/jampon/jio/icon) 2/2 solved
+- [Valkyrie Trading] OA
+  - ![jio](https://scrapbox.io/api/pages/jampon/jio/icon) 2/2 solved
+- Recap [CS 5333 Discrete Structures]
+  - [2022/9/12]
+  - [2022/9/14]
+  - ![jio](https://scrapbox.io/api/pages/jampon/jio/icon) I know all about discrete math"#;
         let achieved = crate::scrapbox::convert_scrapbox_text_into_markdown(given);
         assert_eq!(expected, achieved);
     }
