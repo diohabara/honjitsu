@@ -15,6 +15,10 @@ jobs:
       - name: Run & Save
         run: |
           cargo run > docs/"$(date --date=yesterday +'%Y%m%d').md"
+        env:
+          TODOIST_TOKEN: ${{ secrets.TODOIST_TOKEN }}
+          TOGGL_EMAIL: ${{ secrets.TOGGL_EMAIL }}
+          TOGGL_PASSWORD: ${{ secrets.TOGGL_PASSWORD }}
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
