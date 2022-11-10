@@ -3,7 +3,7 @@ use chrono::Duration;
 use chrono_tz::America::Chicago;
 use chrono_tz::Tz;
 use dotenv::dotenv;
-use log::info;
+
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Method;
@@ -91,7 +91,6 @@ async fn get_project_name_of_entry(
     workspace_id: i64,
     project_id: i64,
 ) -> Result<String, reqwest::Error> {
-    info!("get_project_name_of_entry");
     let url = format!(
         "https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/projects/{project_id}"
     );
@@ -106,14 +105,11 @@ async fn get_project_name_of_entry(
         .send()
         .await?;
     let req_text = req.text().await?;
-    info!("req_text: {}", &req_text);
     let project: WorkspaceProject = serde_json::from_str(req_text.as_str()).unwrap();
-    info!("project: {:?}", &project);
     Ok(project.name)
 }
 
 async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
-    info!("get_time_entries");
     dotenv().ok();
     let url = "https://api.track.toggl.com/api/v9/me/time_entries";
     let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
@@ -126,16 +122,13 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
         .send()
         .await?;
     let req_text = req.text().await?;
-    info!("req_text: {}", &req_text);
     let time_entries: Vec<TimeEntry> = serde_json::from_str(req_text.as_str()).unwrap();
-    info!("time_entries: {:?}", &time_entries);
     Ok(time_entries)
 }
 
 pub async fn get_entry_project_to_duration(
     date: Date<Tz>,
 ) -> Result<Vec<((String, String), Duration)>, reqwest::Error> {
-    info!("get_entry_project_to_duration");
     let time_entries: Vec<TimeEntry> = get_time_entries().await?;
     let mut project_and_task_to_duration: HashMap<(String, String), Duration> = HashMap::new();
     for entry in time_entries {
