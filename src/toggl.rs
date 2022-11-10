@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 use chrono::Duration;
+use chrono_tz::Tz;
 use dotenv::dotenv;
 use log::info;
 use reqwest::header::CONTENT_TYPE;
@@ -7,6 +8,7 @@ use reqwest::Client;
 use reqwest::Method;
 use std::collections::HashMap;
 use std::env;
+use chrono_tz::America::Chicago;
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -131,16 +133,16 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
 }
 
 pub async fn get_entry_project_to_duration(
+    date: Date<Tz>,
 ) -> Result<Vec<((String, String), Duration)>, reqwest::Error> {
     info!("get_entry_project_to_duration");
     let time_entries: Vec<TimeEntry> = get_time_entries().await?;
-    let today = Utc::today();
-    let mut description_to_duration: HashMap<(String, String), Duration> = HashMap::new();
+    let mut project_and_task_to_duration: HashMap<(String, String), Duration> = HashMap::new();
     for entry in time_entries {
         let start_time = DateTime::parse_from_rfc3339(&entry.start)
             .unwrap()
-            .with_timezone(&Utc);
-        if start_time.date() != today {
+            .with_timezone(&Chicago);
+        if start_time.date() != date {
             continue;
         }
         let workspace_id = entry.workspace_id.unwrap_or(0);
@@ -151,21 +153,21 @@ pub async fn get_entry_project_to_duration(
             Some(stop) => {
                 let stop_time = DateTime::parse_from_rfc3339(&stop)
                     .unwrap()
-                    .with_timezone(&Utc);
+                    .with_timezone(&Chicago);
                 let duration = stop_time - start_time;
                 let description = entry.description;
                 let key = (project_name, description);
-                if !description_to_duration.contains_key(&key) {
-                    description_to_duration.insert(key, duration);
+                if !project_and_task_to_duration.contains_key(&key) {
+                    project_and_task_to_duration.insert(key, duration);
                 } else {
-                    let old_duration = description_to_duration.get(&key).unwrap();
-                    description_to_duration.insert(key, duration + *old_duration);
+                    let old_duration = project_and_task_to_duration.get(&key).unwrap();
+                    project_and_task_to_duration.insert(key, duration + *old_duration);
                 }
             }
         }
     }
-    let mut pair_of_description_and_duration: Vec<_> =
-        description_to_duration.into_iter().collect();
-    pair_of_description_and_duration.sort_by(|a, b| b.1.cmp(&a.1));
-    Ok(pair_of_description_and_duration)
+    let mut pair_of_descriptions_to_duration: Vec<_> =
+        project_and_task_to_duration.into_iter().collect();
+    pair_of_descriptions_to_duration.sort_by(|a, b| b.0.cmp(&a.0));
+    Ok(pair_of_descriptions_to_duration)
 }

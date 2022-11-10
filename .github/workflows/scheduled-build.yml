@@ -2,8 +2,8 @@ name: Trigger Tweet on a CRON Schedule
 
 on:
   schedule:
-    # 00:00 every day(https://crontab.guru/#0_0_*_*_*)
-    - cron: "0 0 * * *"
+    # 06:00(UTC) every day: https://crontab.guru/#0_6_*_*_*
+    - cron: "0 6 * * *"
 jobs:
   build:
     name: Trigger Site Rebuild
@@ -14,7 +14,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Tweet
         run: |
-          cargo run
+          RUST_LOG=info cargo run
         env:
           TOGGL_EMAIL: ${{ secrets.TOGGL_EMAIL }}
           TOGGL_PASSWORD: ${{ secrets.TOGGL_PASSWORD }}

@@ -4,7 +4,6 @@ use log::{error, info};
 use std::env;
 
 pub async fn create_tweet(text: &str) {
-    env_logger::init();
     dotenv().ok();
     let consumer_key = env::var("TWITTER_CONSUMER_KEY").expect("TOGGL_EMAIL must be set");
     let consumer_secret = env::var("TWITTER_CONSUMER_SECRET").expect("TOGGL_PASSWORD must be set");
