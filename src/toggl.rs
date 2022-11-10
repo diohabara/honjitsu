@@ -1,5 +1,6 @@
 use chrono::prelude::*;
 use chrono::Duration;
+use chrono_tz::America::Chicago;
 use chrono_tz::Tz;
 use dotenv::dotenv;
 use log::info;
@@ -8,7 +9,6 @@ use reqwest::Client;
 use reqwest::Method;
 use std::collections::HashMap;
 use std::env;
-use chrono_tz::America::Chicago;
 
 use serde::Deserialize;
 use serde::Serialize;

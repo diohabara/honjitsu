@@ -4,11 +4,10 @@ use chrono::prelude::*;
 use chrono::Duration;
 
 use chrono_tz::America::Chicago;
+use honjitsu::toggl::get_entry_project_to_duration;
 use honjitsu::twitter::create_tweet;
-use honjitsu::{toggl::get_entry_project_to_duration};
 use log::info;
 use rand::seq::SliceRandom;
-
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
