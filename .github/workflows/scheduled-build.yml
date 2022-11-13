@@ -6,7 +6,7 @@ on:
     - cron: "0 6 * * *"
 jobs:
   build:
-    name: Trigger Site Rebuild
+    name: Trigger Tweet
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
