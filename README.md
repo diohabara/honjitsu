@@ -9,6 +9,18 @@ cargo fmt
 cargo clippy --fix
 ```
 
+## doc
+
+```bash
+cargo doc --open
+```
+
+## run
+
+```bash
+cargo run --release
+```
+
 ## set environment variables using GitHub CLI
 
 You need to set the following secrets
