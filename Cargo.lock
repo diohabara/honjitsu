@@ -459,7 +459,6 @@ dependencies = [
  "env_logger",
  "log",
  "pretty_assertions",
- "rand",
  "regex",
  "reqwest",
  "serde",

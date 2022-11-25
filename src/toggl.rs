@@ -4,6 +4,7 @@ use chrono_tz::America::Chicago;
 use chrono_tz::Tz;
 use dotenv::dotenv;
 
+use log::info;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Method;
@@ -98,14 +99,15 @@ async fn get_project_name_of_entry(
     let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
     let password = env::var("TOGGL_PASSWORD").expect("TOGGL_PASSWORD must be set");
     let client = Client::new();
-    let req = client
+    let response = client
         .request(Method::GET, url.to_string())
         .basic_auth(email, Some(password))
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?;
-    let req_text = req.text().await?;
-    let project: WorkspaceProject = serde_json::from_str(req_text.as_str()).unwrap();
+    info!("Response: {:?}", response);
+    let response_text = response.text().await?;
+    let project: WorkspaceProject = serde_json::from_str(response_text.as_str()).unwrap();
     Ok(project.name)
 }
 
@@ -115,14 +117,15 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
     let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
     let password = env::var("TOGGL_PASSWORD").expect("TOGGL_PASSWORD must be set");
     let client = Client::new();
-    let req = client
+    let response = client
         .request(Method::GET, url.to_string())
         .basic_auth(email, Some(password))
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?;
-    let req_text = req.text().await?;
-    let time_entries: Vec<TimeEntry> = serde_json::from_str(req_text.as_str()).unwrap();
+    info!("response: {:?}", response);
+    let response_text = response.text().await?;
+    let time_entries: Vec<TimeEntry> = serde_json::from_str(response_text.as_str()).unwrap();
     Ok(time_entries)
 }
 

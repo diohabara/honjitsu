@@ -2,6 +2,7 @@ use chrono::prelude::*;
 use chrono_tz::America::Chicago;
 use chrono_tz::Tz;
 use dotenv::dotenv;
+use log::info;
 use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
@@ -55,12 +56,13 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
     dotenv().ok();
     let token = env::var("TODOIST_TOKEN").expect("TODOIST_TOKEN must be set");
     let client = Client::new();
-    let req = client
+    let response = client
         .request(Method::GET, url.to_string())
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
-    let res_text = req.text().await?;
+    info!("Response: {:?}", response);
+    let res_text = response.text().await?;
     let json: Value = serde_json::from_str(res_text.as_str()).unwrap();
     let Value { items, projects: _ } = json;
     let tasks = items;
