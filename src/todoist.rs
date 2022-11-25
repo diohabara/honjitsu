@@ -40,7 +40,7 @@ struct Projects {
     view_style: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 struct Value {
     items: Vec<CompletedTask>,
     projects: HashMap<String, Projects>,
@@ -62,8 +62,8 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
         .send()
         .await?;
     info!("Response: {:?}", response);
-    let res_text = response.text().await?;
-    let json: Value = serde_json::from_str(res_text.as_str()).unwrap();
+    let response_text = response.text().await?;
+    let json = serde_json::from_str(response_text.as_str()).unwrap_or_default();
     let Value { items, projects: _ } = json;
     let tasks = items;
     let re = Regex::new(r"\[.*\](.*)").unwrap(); // remove links
