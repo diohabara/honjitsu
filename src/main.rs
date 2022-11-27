@@ -76,14 +76,14 @@ async fn main() -> Result<(), reqwest::Error> {
     let utc = Utc::now().naive_utc();
     let today = Chicago.from_utc_datetime(&utc).date();
     let yesterday = today - Duration::days(1);
-    let todoist_text_for_tweets = get_todoist_text_for_tweet(yesterday).await?;
     let toggl_text_for_tweets = get_toggle_text_for_tweet(yesterday).await?;
     for tweet in toggl_text_for_tweets {
         info!("{tweet} {}", tweet.len());
         create_tweet(tweet.as_str()).await;
     }
+    let todoist_text_for_tweets = get_todoist_text_for_tweet(yesterday).await?;
     for tweet in todoist_text_for_tweets {
-        info!("{tweet} {}", tweet.len());
+        info!("{tweet} with the length {}", tweet.len());
         create_tweet(tweet.as_str()).await;
     }
     Ok(())

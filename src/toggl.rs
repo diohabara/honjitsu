@@ -125,8 +125,13 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
         .await?;
     info!("response: {:?}", response);
     let response_text = response.text().await?;
-    let time_entries: Vec<TimeEntry> =
-        serde_json::from_str(response_text.as_str()).unwrap_or_default();
+    let time_entries: Vec<TimeEntry> = match serde_json::from_str(response_text.as_str()) {
+        Ok(times_entries) => times_entries,
+        Err(e) => {
+            info!("Error: {:?}", e);
+            Vec::new()
+        }
+    };
     Ok(time_entries)
 }
 
