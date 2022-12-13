@@ -50,16 +50,19 @@ struct WorkspaceProject {
     created_at: String,
     currency: Option<String>,
     current_period: Option<CurrentPeriod>,
+    end_date: String,
     estimated_hours: Option<i64>,
+    first_time_entry: String,
     fixed_fee: Option<String>,
     id: i64,
     is_private: bool,
     name: String,
-    rate: Option<i64>,
+    rate: i64,
     rate_last_updated: Option<String>,
     recurring: bool,
-    recurring_parameters: Option<String>,
+    recurring_parameters: Option<String>, // TODO: RecurringParameters
     server_deleted_at: Option<String>,
+    start_date: String,
     template: Option<bool>,
     wid: i64,
     workspace_id: i64,
@@ -107,7 +110,13 @@ async fn get_project_name_of_entry(
         .await?;
     info!("Response: {:?}", response);
     let response_text = response.text().await?;
-    let project: WorkspaceProject = serde_json::from_str(response_text.as_str()).unwrap();
+    let project: WorkspaceProject = match serde_json::from_str(response_text.as_str()) {
+        Ok(project) => project,
+        Err(e) => {
+            info!("Error: {:?}", e);
+            return Ok("".to_string());
+        }
+    };
     Ok(project.name)
 }
 
