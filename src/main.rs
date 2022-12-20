@@ -1,7 +1,8 @@
 use chrono::prelude::*;
 use chrono::Duration;
 
-use chrono_tz::America::Chicago;
+// use chrono_tz::America::Chicago;
+use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use honjitsu::todoist::get_todoist_completed_tasks;
 use honjitsu::toggl::get_entry_project_to_duration;
@@ -74,7 +75,8 @@ async fn get_todoist_text_for_tweet(date: Date<Tz>) -> Result<Vec<String>, reqwe
 async fn main() -> Result<(), reqwest::Error> {
     env_logger::init();
     let utc = Utc::now().naive_utc();
-    let today = Chicago.from_utc_datetime(&utc).date();
+    // let today = Chicago.from_utc_datetime(&utc).date();
+    let today = Tokyo.from_utc_datetime(&utc).date();
     let yesterday = today - Duration::days(1);
     let toggl_text_for_tweets = get_toggle_text_for_tweet(yesterday).await?;
     for tweet in toggl_text_for_tweets {

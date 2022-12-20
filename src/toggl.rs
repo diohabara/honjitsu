@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use chrono::Duration;
-use chrono_tz::America::Chicago;
+// use chrono_tz::America::Chicago;
+use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use dotenv::dotenv;
 
@@ -152,7 +153,7 @@ pub async fn get_entry_project_to_duration(
     for entry in time_entries {
         let start_time = DateTime::parse_from_rfc3339(&entry.start)
             .unwrap()
-            .with_timezone(&Chicago);
+            .with_timezone(&Tokyo);
         if start_time.date() != date {
             continue;
         }
@@ -164,7 +165,7 @@ pub async fn get_entry_project_to_duration(
             Some(stop) => {
                 let stop_time = DateTime::parse_from_rfc3339(&stop)
                     .unwrap()
-                    .with_timezone(&Chicago);
+                    .with_timezone(&Tokyo);
                 let duration = stop_time - start_time;
                 let description = entry.description;
                 let key = (project_name, description);

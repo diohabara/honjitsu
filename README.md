@@ -53,3 +53,7 @@ gh secret set -f .env
 - [GitHub CLI secrets](https://cli.github.com/manual/gh_secret_set)
 - [Twitter API](https://developer.twitter.com/en/docs/twitter-api)
 - [Twitter API samples](https://github.com/twitterdev/Twitter-API-v2-sample-code)
+
+## TODO
+
+- [ ] Specify the timezone in a single file
