@@ -16,12 +16,12 @@ async fn get_toggle_text_for_tweet(date: Date<Tz>) -> Result<Vec<String>, reqwes
     let mut previous_project = "".to_string();
     let mut current_tasks = Vec::new();
     current_tasks.push(format!("Toggl {}", date.format("%Y/%m/%d")));
-    for (i, ((project, task), duration)) in toggl_pairs.iter().enumerate() {
+    for (i, ((client, project, task), duration)) in toggl_pairs.iter().enumerate() {
         if current_tasks.is_empty() {
             current_tasks.push(format!("Toggl {}", date.format("%Y/%m/%d")));
         }
         if &previous_project != project {
-            current_tasks.push(format!("⏰{project}"));
+            current_tasks.push(format!("⏰{client}/{project}"));
             previous_project = project.to_string();
         }
         current_tasks.push(format!(

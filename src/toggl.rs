@@ -5,7 +5,8 @@ use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use dotenv::dotenv;
 
-use log::info;
+use log::debug;
+use log::error;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Client;
 use reqwest::Method;
@@ -14,6 +15,10 @@ use std::env;
 
 use serde::Deserialize;
 use serde::Serialize;
+
+type TogglClientName = String;
+type TogglProjectName = String;
+type TogglTaskName = String;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct TimeEntry {
@@ -38,7 +43,7 @@ struct TimeEntry {
     workspace_id: Option<i64>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 struct WorkspaceProject {
     active: bool,
     actual_hours: Option<i64>,
@@ -51,25 +56,22 @@ struct WorkspaceProject {
     created_at: String,
     currency: Option<String>,
     current_period: Option<CurrentPeriod>,
-    end_date: String,
     estimated_hours: Option<i64>,
-    first_time_entry: String,
     fixed_fee: Option<String>,
     id: i64,
     is_private: bool,
     name: String,
-    rate: i64,
+    rate: Option<i64>,
     rate_last_updated: Option<String>,
     recurring: bool,
     recurring_parameters: Option<String>, // TODO: RecurringParameters
     server_deleted_at: Option<String>,
-    start_date: String,
     template: Option<bool>,
     wid: i64,
     workspace_id: i64,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 struct CurrentPeriod {
     end_date: String,
     start_date: String,
@@ -92,10 +94,20 @@ struct RecurringParametersItem {
     project_start_date: String,
 }
 
-async fn get_project_name_of_entry(
+#[derive(Debug, Deserialize, Serialize)]
+struct TogglClient {
+    archived: bool,
+    at: String,
+    id: i64,
+    name: String,
+    server_deleted_at: Option<String>,
+    wid: i64,
+}
+
+async fn get_project_of_entry(
     workspace_id: i64,
     project_id: i64,
-) -> Result<String, reqwest::Error> {
+) -> Result<WorkspaceProject, reqwest::Error> {
     let url = format!(
         "https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/projects/{project_id}"
     );
@@ -109,16 +121,45 @@ async fn get_project_name_of_entry(
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?;
-    info!("Response: {:?}", response);
+    debug!("Response: {:?}", response);
     let response_text = response.text().await?;
     let project: WorkspaceProject = match serde_json::from_str(response_text.as_str()) {
         Ok(project) => project,
         Err(e) => {
-            info!("Error: {:?}", e);
+            error!("WorkspaceProject: {:?}", e);
+            error!("Response: {:?}", response_text);
+            WorkspaceProject::default()
+        }
+    };
+    Ok(project)
+}
+
+async fn get_client_name_of_workspace(
+    workspace_id: i64,
+    client_id: i64,
+) -> Result<TogglClientName, reqwest::Error> {
+    let url =
+        format!("https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/clients/{client_id}");
+    dotenv().ok();
+    let email = env::var("TOGGL_EMAIL").expect("TOGGL_EMAIL must be set");
+    let password = env::var("TOGGL_PASSWORD").expect("TOGGL_PASSWORD must be set");
+    let client = Client::new();
+    let response = client
+        .request(Method::GET, url.to_string())
+        .basic_auth(email, Some(password))
+        .header(CONTENT_TYPE, "application/json")
+        .send()
+        .await?;
+    debug!("Response: {:?}", response);
+    let response_text = response.text().await?;
+    let toggl_client: TogglClient = match serde_json::from_str(response_text.as_str()) {
+        Ok(toggl_client) => toggl_client,
+        Err(e) => {
+            error!("TogglClient: {:?}", e);
             return Ok("".to_string());
         }
     };
-    Ok(project.name)
+    Ok(toggl_client.name)
 }
 
 async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
@@ -133,12 +174,12 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
         .header(CONTENT_TYPE, "application/json")
         .send()
         .await?;
-    info!("response: {:?}", response);
+    debug!("response: {:?}", response);
     let response_text = response.text().await?;
     let time_entries: Vec<TimeEntry> = match serde_json::from_str(response_text.as_str()) {
         Ok(times_entries) => times_entries,
         Err(e) => {
-            info!("Error: {:?}", e);
+            error!("TimeEntry: {:?}", e);
             Vec::new()
         }
     };
@@ -147,9 +188,18 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
 
 pub async fn get_entry_project_to_duration(
     date: Date<Tz>,
-) -> Result<Vec<((String, String), Duration)>, reqwest::Error> {
+) -> Result<
+    Vec<(
+        (TogglClientName, TogglProjectName, TogglProjectName),
+        Duration,
+    )>,
+    reqwest::Error,
+> {
     let time_entries: Vec<TimeEntry> = get_time_entries().await?;
-    let mut project_and_task_to_duration: HashMap<(String, String), Duration> = HashMap::new();
+    let mut project_and_task_to_duration: HashMap<
+        (TogglClientName, TogglProjectName, TogglTaskName),
+        Duration,
+    > = HashMap::new();
     for entry in time_entries {
         let start_time = DateTime::parse_from_rfc3339(&entry.start)
             .unwrap()
@@ -159,7 +209,10 @@ pub async fn get_entry_project_to_duration(
         }
         let workspace_id = entry.workspace_id.unwrap_or(0);
         let project_id = entry.project_id.unwrap_or(0);
-        let project_name = get_project_name_of_entry(workspace_id, project_id).await?;
+        let project = get_project_of_entry(workspace_id, project_id).await?;
+        let client_id = project.client_id.unwrap_or(0);
+        let project_name = project.name;
+        let client_name = get_client_name_of_workspace(workspace_id, client_id).await?;
         match entry.stop {
             None => continue,
             Some(stop) => {
@@ -168,7 +221,7 @@ pub async fn get_entry_project_to_duration(
                     .with_timezone(&Tokyo);
                 let duration = stop_time - start_time;
                 let description = entry.description;
-                let key = (project_name, description);
+                let key = (client_name, project_name, description);
                 if !project_and_task_to_duration.contains_key(&key) {
                     project_and_task_to_duration.insert(key, duration);
                 } else {

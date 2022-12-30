@@ -3,7 +3,8 @@ use chrono::prelude::*;
 use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use dotenv::dotenv;
-use log::info;
+use log::debug;
+use log::error;
 use regex::Regex;
 use reqwest::Client;
 use reqwest::Method;
@@ -62,17 +63,17 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;
-    info!("Response: {:?}", response);
+    debug!("Response: {:?}", response);
     let response_text = response.text().await?;
-    info!("Response text: {:?}", response_text);
+    debug!("Response text: {:?}", response_text);
     let json = match serde_json::from_str::<Value>(response_text.as_str()) {
         Ok(json) => json,
         Err(e) => {
-            info!("Error: {:?}", e);
+            error!("Error: {:?}", e);
             return Ok(vec![]);
         }
     };
-    info!("json: {:?}", json);
+    debug!("json: {:?}", json);
     let Value { items, projects: _ } = json;
     let tasks = items;
     let re = Regex::new(r"\[.*\](.*)").unwrap(); // remove links
