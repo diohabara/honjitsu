@@ -16,9 +16,9 @@ use std::env;
 use serde::Deserialize;
 use serde::Serialize;
 
-type TogglClientName = String;
-type TogglProjectName = String;
-type TogglTaskName = String;
+pub type TogglClientName = String;
+pub type TogglProjectName = String;
+pub type TogglTaskName = String;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct TimeEntry {
@@ -188,13 +188,7 @@ async fn get_time_entries() -> Result<Vec<TimeEntry>, reqwest::Error> {
 
 pub async fn get_entry_project_to_duration(
     date: Date<Tz>,
-) -> Result<
-    Vec<(
-        (TogglClientName, TogglProjectName, TogglProjectName),
-        Duration,
-    )>,
-    reqwest::Error,
-> {
+) -> Result<Vec<((TogglClientName, TogglProjectName, TogglTaskName), Duration)>, reqwest::Error> {
     let time_entries: Vec<TimeEntry> = get_time_entries().await?;
     let mut project_and_task_to_duration: HashMap<
         (TogglClientName, TogglProjectName, TogglTaskName),
