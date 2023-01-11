@@ -74,10 +74,13 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
     debug!("json: {:?}", json);
     let Value { items, projects: _ } = json;
     let tasks = items;
-    let re = Regex::new(r"(?x) # remove link
+    let re = Regex::new(
+        r"(?x) # remove link
         \[(?P<title>.*)\] # [title]
         (?P<link>\(.*\)) # (link)
-    ").unwrap();
+    ",
+    )
+    .unwrap();
     let mut completed_tasks = Vec::new();
     for obj in tasks {
         let completed_at = DateTime::parse_from_rfc3339(&obj.completed_at)
