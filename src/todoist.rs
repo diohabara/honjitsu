@@ -52,9 +52,7 @@ struct Value {
 // get all completed tasks
 // curl https://api.todoist.com/sync/v9/completed/get_all -H "Authorization: Bearer $token"
 pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, reqwest::Error> {
-    let params = [("since", "2022-9-05T00:00:00")];
     let url = "https://api.todoist.com/sync/v9/completed/get_all";
-    let url = reqwest::Url::parse_with_params(url, &params).unwrap();
     dotenv().ok();
     let token = env::var("TODOIST_TOKEN").expect("TODOIST_TOKEN must be set");
     let client = Client::new();
@@ -76,14 +74,17 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
     debug!("json: {:?}", json);
     let Value { items, projects: _ } = json;
     let tasks = items;
-    let re = Regex::new(r"\[.*\](.*)").unwrap(); // remove links
+    let re = Regex::new(r"(?x) # remove link
+        \[(?P<title>.*)\] # [title]
+        (?P<link>\(.*\)) # (link)
+    ").unwrap();
     let mut completed_tasks = Vec::new();
     for obj in tasks {
         let completed_at = DateTime::parse_from_rfc3339(&obj.completed_at)
             .unwrap()
             .with_timezone(&Tokyo);
         if completed_at.date() == date {
-            completed_tasks.push(re.replace_all(&obj.content, "").to_string());
+            completed_tasks.push(re.replace_all(&obj.content, "$title").to_string());
         }
     }
     Ok(completed_tasks)
