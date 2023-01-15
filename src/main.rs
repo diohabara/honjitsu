@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use chrono::Duration;
 
-// use chrono_tz::America::Chicago;
+use chrono_tz::America::Chicago;
 use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use honjitsu::todoist::get_todoist_completed_tasks;
@@ -67,8 +67,9 @@ async fn get_todoist_text_for_tweet(date: Date<Tz>) -> Result<String, reqwest::E
 async fn main() -> Result<(), reqwest::Error> {
     env_logger::init();
     let utc = Utc::now().naive_utc();
-    // let today = Chicago.from_utc_datetime(&utc).date();
-    let today = Tokyo.from_utc_datetime(&utc).date();
+    // FIXME: change it according to where you live
+    let today = Chicago.from_utc_datetime(&utc).date();
+    // let today = Tokyo.from_utc_datetime(&utc).date();
     let yesterday = today - Duration::days(1);
     let toggl_text = get_toggl_text_for_tweet(yesterday).await?;
     for tweet in divide_sentence_into_tweets(toggl_text.as_str()) {

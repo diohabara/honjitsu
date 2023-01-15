@@ -3,9 +3,9 @@ name: Trigger Tweet on a CRON Schedule
 on:
   schedule:
     # 06:00(UTC) every day: https://crontab.guru/#0_6_*_*_*
-    # - cron: "0 6 * * *" # For Texas
+    - cron: "0 6 * * *" # For Texas
     # 15:00(UTC) every day: https://crontab.guru/#0_15_*_*_*
-    - cron: "0 15 * * *" # For Tokyo
+    # - cron: "0 15 * * *" # For Tokyo
 jobs:
   build:
     name: Trigger Tweet

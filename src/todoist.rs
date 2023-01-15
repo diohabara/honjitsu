@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-// use chrono_tz::America::Chicago;
+use chrono_tz::America::Chicago;
 use chrono_tz::Asia::Tokyo;
 use chrono_tz::Tz;
 use dotenv::dotenv;
@@ -85,7 +85,9 @@ pub async fn get_todoist_completed_tasks(date: Date<Tz>) -> Result<Vec<String>, 
     for obj in tasks {
         let completed_at = DateTime::parse_from_rfc3339(&obj.completed_at)
             .unwrap()
-            .with_timezone(&Tokyo);
+            // FIXME: change according to where you live
+            // .with_timezone(&Tokyo);
+            .with_timezone(&Chicago);
         if completed_at.date() == date {
             completed_tasks.push(re.replace_all(&obj.content, "$title").to_string());
         }
